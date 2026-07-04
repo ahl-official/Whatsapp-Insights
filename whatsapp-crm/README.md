@@ -695,3 +695,77 @@ whatsapp-crm/
 ```
 
 
+
+---
+
+
+
+## Development Workflow
+
+
+
+### Branches
+
+
+
+| Branch | Purpose |
+|--------|---------|
+| `main` | Production — auto-deploys backend (Railway) and dashboard (Vercel) when GitHub is connected |
+| `dev` | Integration / staging — merge feature work here before promoting to `main` |
+
+
+
+### Local development
+
+
+
+```bash
+# Backend (port 3001)
+cd whatsapp-crm/backend
+cp .env.example .env   # fill in secrets
+npm install && npm run dev
+
+# Dashboard (port 3000)
+cd whatsapp-crm/dashboard
+cp .env.example .env.local
+npm install && npm run dev
+```
+
+
+
+Use ngrok only for local webhook testing. Production WAHA webhooks point at Railway.
+
+
+
+### GitHub → deploy
+
+
+
+After connecting the repo [ahl-official/Whatsapp-Insights](https://github.com/ahl-official/Whatsapp-Insights):
+
+
+
+| Service | Root directory | Notes |
+|---------|----------------|-------|
+| **Vercel** (dashboard) | `whatsapp-crm/dashboard` | Settings → Git → connect repo |
+| **Railway** (backend) | `whatsapp-crm/backend` | Watch paths: `whatsapp-crm/backend/**` |
+
+
+
+Pushes to `main` trigger production deploys. Verify with Railway logs or `GET /health` on the backend URL.
+
+
+
+### Typical flow
+
+
+
+1. Branch from `dev`: `git checkout dev && git pull && git checkout -b feature/my-change`
+2. Develop and test locally
+3. Open PR into `dev`, then merge to `main` when ready for production
+
+
+
+---
+
+
