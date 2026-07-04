@@ -1,0 +1,11 @@
+{
+  "config": {
+    "webhooks": [{
+      "url": "https://rare-ducks-prove.loca.lt/webhook",
+      "events": ["message"]
+    }],
+    "ignore": {
+      "groups": true
+    }
+  }
+}

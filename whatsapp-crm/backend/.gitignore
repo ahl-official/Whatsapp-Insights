@@ -1,0 +1,17 @@
+# Environment files — NEVER commit
+.env
+.env.local
+*.env
+
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Railway
+.railway/
+
+# Logs
+logs/
+*.log

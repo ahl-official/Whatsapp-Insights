@@ -1,0 +1,9 @@
+{
+  "event": "message",
+  "session": "ahlaiteam",
+  "payload": {
+    "from": "919999999999@c.us",
+    "pushName": "Debug Test",
+    "body": "Bhai price kya hai AC ka, demo chahiye"
+  }
+}
