@@ -52,6 +52,109 @@ export interface ReportStats {
   performanceNotes: string[];
 }
 
+export interface AgentScore {
+  total: number;
+  sentiment: number;
+  followUp: number;
+  hotLeadConversion: number;
+  responseQuality: number;
+  grade: string;
+  label: string;
+  color: string;
+}
+
+/** Performance score 0–100 across sentiment, follow-up, hot leads, and response quality. */
+export function calculateScore(insights: ReportInsight[]): AgentScore {
+  if (!insights || insights.length === 0) {
+    return {
+      total: 0,
+      sentiment: 0,
+      followUp: 0,
+      hotLeadConversion: 0,
+      responseQuality: 0,
+      grade: 'N/A',
+      label: 'No Data',
+      color: '#6b7280',
+    };
+  }
+
+  const total = insights.length;
+
+  const positive = insights.filter((i) => i.sentiment === 'positive').length;
+  const neutral = insights.filter((i) => i.sentiment === 'neutral').length;
+  const sentimentPoints = ((positive * 1.0 + neutral * 0.5) / total) * 25;
+
+  const noFollowup = insights.filter(
+    (i) => i.follow_up_deadline === 'no follow-up needed'
+  ).length;
+  const urgent = insights.filter(
+    (i) => i.follow_up_deadline === 'urgent (today)'
+  ).length;
+  const soon = insights.filter(
+    (i) => i.follow_up_deadline === 'soon (2-3 days)'
+  ).length;
+  const later = insights.filter(
+    (i) => i.follow_up_deadline === 'later (this week)'
+  ).length;
+  const followUpPoints =
+    ((noFollowup * 1.0 + urgent * 0.0 + soon * 0.7 + later * 0.9) / total) * 25;
+
+  const hot = insights.filter((i) => i.deal_stage === 'hot').length;
+  const warm = insights.filter((i) => i.deal_stage === 'warm').length;
+  const conversionPoints = ((hot * 1.0 + warm * 0.5) / total) * 25;
+
+  const qualityChats = insights.filter(
+    (i) =>
+      i.customer_intent &&
+      i.customer_intent !== 'Could not extract' &&
+      i.customer_intent.length > 20 &&
+      i.key_summary &&
+      i.key_summary.length > 50
+  ).length;
+  const qualityPoints = (qualityChats / total) * 25;
+
+  const totalScore = Math.round(
+    sentimentPoints + followUpPoints + conversionPoints + qualityPoints
+  );
+
+  let grade: string;
+  let label: string;
+  let color: string;
+
+  if (totalScore >= 85) {
+    grade = 'A';
+    label = 'Excellent';
+    color = '#22c55e';
+  } else if (totalScore >= 70) {
+    grade = 'B';
+    label = 'Good';
+    color = '#6366f1';
+  } else if (totalScore >= 55) {
+    grade = 'C';
+    label = 'Average';
+    color = '#f59e0b';
+  } else if (totalScore >= 40) {
+    grade = 'D';
+    label = 'Needs Improvement';
+    color = '#f97316';
+  } else {
+    grade = 'F';
+    label = 'Poor';
+    color = '#ef4444';
+  }
+
+  return {
+    total: totalScore,
+    sentiment: Math.round(sentimentPoints * 10) / 10,
+    followUp: Math.round(followUpPoints * 10) / 10,
+    hotLeadConversion: Math.round(conversionPoints * 10) / 10,
+    responseQuality: Math.round(qualityPoints * 10) / 10,
+    grade,
+    label,
+    color,
+  };
+}
+
 /** Follow-up compliance: AI-estimated per product rules. */
 export function isFollowedUp(insight: ReportInsight): boolean {
   if (insight.follow_up_deadline === 'no follow-up needed') return true;

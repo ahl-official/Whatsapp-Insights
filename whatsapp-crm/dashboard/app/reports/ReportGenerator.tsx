@@ -3,12 +3,24 @@
 import { useMemo, useState } from 'react';
 import {
   buildReportStats,
+  calculateScore,
   fetchAgentInsights,
   isFollowedUp,
+  type AgentScore,
   type ReportInsight,
   type ReportStats,
 } from '@/lib/reportData';
 import ReportPDF from './ReportPDF';
+
+const SCORE_CATEGORIES: {
+  key: keyof Pick<AgentScore, 'sentiment' | 'followUp' | 'hotLeadConversion' | 'responseQuality'>;
+  label: string;
+}[] = [
+  { key: 'sentiment', label: 'Sentiment' },
+  { key: 'followUp', label: 'Follow-up' },
+  { key: 'hotLeadConversion', label: 'Hot Leads' },
+  { key: 'responseQuality', label: 'Response' },
+];
 
 interface ReportGeneratorProps {
   agents: string[];
@@ -37,6 +49,7 @@ export default function ReportGenerator({ agents }: ReportGeneratorProps) {
   const [pdfError, setPdfError] = useState<string | null>(null);
   const [insights, setInsights] = useState<ReportInsight[] | null>(null);
   const [stats, setStats] = useState<ReportStats | null>(null);
+  const [score, setScore] = useState<AgentScore | null>(null);
   const [generatedAt, setGeneratedAt] = useState('');
 
   const canGenerate = Boolean(agentName && fromDate && toDate && !loading);
@@ -51,6 +64,7 @@ export default function ReportGenerator({ agents }: ReportGeneratorProps) {
     setPdfError(null);
     setInsights(null);
     setStats(null);
+    setScore(null);
 
     if (!agentName || !fromDate || !toDate) {
       setError('Select an agent and date range to generate a report');
@@ -67,6 +81,7 @@ export default function ReportGenerator({ agents }: ReportGeneratorProps) {
       const rows = await fetchAgentInsights(agentName, fromDate, toDate);
       setInsights(rows);
       setStats(buildReportStats(rows));
+      setScore(calculateScore(rows));
       setGeneratedAt(
         new Date().toLocaleString('en-IN', {
           day: '2-digit',
@@ -84,7 +99,7 @@ export default function ReportGenerator({ agents }: ReportGeneratorProps) {
   }
 
   async function handleDownloadPdf() {
-    if (!insights || !stats) return;
+    if (!insights || !stats || !score) return;
     setPdfError(null);
     setPdfLoading(true);
     try {
@@ -97,6 +112,7 @@ export default function ReportGenerator({ agents }: ReportGeneratorProps) {
           generatedAt={generatedAt}
           insights={insights}
           stats={stats}
+          score={score}
         />
       ).toBlob();
 
@@ -199,7 +215,7 @@ export default function ReportGenerator({ agents }: ReportGeneratorProps) {
         </div>
       )}
 
-      {!loading && insights && stats && insights.length > 0 && (
+      {!loading && insights && stats && score && insights.length > 0 && (
         <div className="report-preview">
           <div className="report-preview-header">
             <div>
@@ -223,6 +239,46 @@ export default function ReportGenerator({ agents }: ReportGeneratorProps) {
               </button>
             </div>
           </div>
+
+          <section className="score-card" style={{ borderColor: score.color }}>
+            <h3 className="score-card-eyebrow">Performance Score</h3>
+            <div className="score-card-main">
+              <div className="score-number" style={{ color: score.color }}>
+                {score.total}
+                <span className="score-number-max"> / 100</span>
+              </div>
+              <span className="score-grade-pill" style={{ background: score.color }}>
+                Grade: {score.grade} — {score.label}
+              </span>
+            </div>
+            <div className="score-bars">
+              {SCORE_CATEGORIES.map(({ key, label }) => {
+                const value = score[key];
+                const pct = Math.min(100, Math.max(0, (value / 25) * 100));
+                return (
+                  <div key={key} className="score-bar-row">
+                    <span className="score-bar-label">{label}</span>
+                    <div className="score-bar-track">
+                      <div
+                        className="score-bar-fill"
+                        style={{ width: `${pct}%`, background: score.color }}
+                      />
+                    </div>
+                    <span className="score-bar-value">
+                      {value.toFixed(1)} / 25
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+            <p className="score-card-meta">
+              Period: {formatDisplayDate(fromDate)} — {formatDisplayDate(toDate)}
+            </p>
+            <p className="score-card-meta">
+              Based on {insights.length} customer interaction
+              {insights.length === 1 ? '' : 's'}
+            </p>
+          </section>
 
           <section className="section">
             <h3 className="section-title">Summary Stats</h3>

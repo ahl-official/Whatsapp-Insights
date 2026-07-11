@@ -7,7 +7,7 @@ import {
   View,
   StyleSheet,
 } from '@react-pdf/renderer';
-import type { ReportInsight, ReportStats } from '@/lib/reportData';
+import type { AgentScore, ReportInsight, ReportStats } from '@/lib/reportData';
 import { isFollowedUp } from '@/lib/reportData';
 
 export interface ReportPDFProps {
@@ -17,7 +17,18 @@ export interface ReportPDFProps {
   generatedAt: string;
   insights: ReportInsight[];
   stats: ReportStats;
+  score: AgentScore;
 }
+
+const SCORE_ROWS: {
+  key: keyof Pick<AgentScore, 'sentiment' | 'followUp' | 'hotLeadConversion' | 'responseQuality'>;
+  label: string;
+}[] = [
+  { key: 'sentiment', label: 'Sentiment' },
+  { key: 'followUp', label: 'Follow-up' },
+  { key: 'hotLeadConversion', label: 'Hot Leads' },
+  { key: 'responseQuality', label: 'Response' },
+];
 
 const styles = StyleSheet.create({
   page: {
@@ -50,6 +61,75 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     marginTop: 14,
     textTransform: 'uppercase',
+  },
+  scoreBox: {
+    borderWidth: 1.5,
+    borderRadius: 6,
+    padding: 14,
+    marginBottom: 4,
+    backgroundColor: '#f8fafc',
+  },
+  scoreEyebrow: {
+    fontSize: 8,
+    fontFamily: 'Helvetica-Bold',
+    color: '#64748b',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    marginBottom: 8,
+  },
+  scoreMain: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+    marginBottom: 12,
+  },
+  scoreNumber: {
+    fontSize: 36,
+    fontFamily: 'Helvetica-Bold',
+  },
+  scoreMax: {
+    fontSize: 12,
+    color: '#64748b',
+  },
+  gradePill: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
+    color: '#ffffff',
+    fontSize: 9,
+    fontFamily: 'Helvetica-Bold',
+  },
+  scoreBarRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  scoreBarLabel: {
+    width: '22%',
+    fontSize: 8,
+    color: '#334155',
+  },
+  scoreBarTrack: {
+    width: '55%',
+    height: 8,
+    backgroundColor: '#e2e8f0',
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  scoreBarFill: {
+    height: 8,
+    borderRadius: 4,
+  },
+  scoreBarValue: {
+    width: '23%',
+    fontSize: 8,
+    color: '#475569',
+    textAlign: 'right',
+  },
+  scoreMeta: {
+    marginTop: 8,
+    fontSize: 8,
+    color: '#64748b',
   },
   statsRow: {
     flexDirection: 'row',
@@ -171,6 +251,7 @@ export default function ReportPDF({
   generatedAt,
   insights,
   stats,
+  score,
 }: ReportPDFProps) {
   return (
     <Document>
@@ -182,6 +263,44 @@ export default function ReportPDF({
             Period: {fromDate} to {toDate}
           </Text>
           <Text style={styles.headerMeta}>Generated: {generatedAt}</Text>
+        </View>
+
+        <Text style={styles.sectionTitle}>Performance Score</Text>
+        <View style={[styles.scoreBox, { borderColor: score.color }]}>
+          <Text style={styles.scoreEyebrow}>Performance Score</Text>
+          <View style={styles.scoreMain}>
+            <Text style={[styles.scoreNumber, { color: score.color }]}>
+              {score.total}
+              <Text style={styles.scoreMax}> / 100</Text>
+            </Text>
+            <Text style={[styles.gradePill, { backgroundColor: score.color }]}>
+              Grade: {score.grade} — {score.label}
+            </Text>
+          </View>
+          {SCORE_ROWS.map(({ key, label }) => {
+            const value = score[key];
+            const pct = Math.min(100, Math.max(0, (value / 25) * 100));
+            return (
+              <View key={key} style={styles.scoreBarRow}>
+                <Text style={styles.scoreBarLabel}>{label}</Text>
+                <View style={styles.scoreBarTrack}>
+                  <View
+                    style={[
+                      styles.scoreBarFill,
+                      { width: `${pct}%`, backgroundColor: score.color },
+                    ]}
+                  />
+                </View>
+                <Text style={styles.scoreBarValue}>
+                  {value.toFixed(1)} / 25
+                </Text>
+              </View>
+            );
+          })}
+          <Text style={styles.scoreMeta}>
+            Based on {insights.length} interaction{insights.length === 1 ? '' : 's'} from{' '}
+            {formatDate(fromDate)} to {formatDate(toDate)}
+          </Text>
         </View>
 
         <Text style={styles.sectionTitle}>1. Summary Stats</Text>
