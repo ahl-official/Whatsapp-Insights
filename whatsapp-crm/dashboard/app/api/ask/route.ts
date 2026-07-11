@@ -58,13 +58,14 @@ interface HistoryMessage {
 
 export async function POST(req: NextRequest) {
   try {
+    const apiKey = process.env.OPENROUTER_API_KEY?.trim();
+
     const { question, data, dataType, history } = await req.json();
 
     if (!question || typeof question !== 'string') {
       return NextResponse.json({ error: 'Question is required' }, { status: 400 });
     }
 
-    const apiKey = process.env.OPENROUTER_API_KEY;
     if (!apiKey) {
       return NextResponse.json({ error: 'AI not configured' }, { status: 500 });
     }
@@ -105,12 +106,12 @@ ${JSON.stringify(data, null, 2)}`;
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${apiKey}`,
+        'Authorization': `Bearer ${apiKey}`,
         'HTTP-Referer': 'https://dashboard-rose-iota-52.vercel.app',
         'X-Title': 'WhatsApp CRM Dashboard',
       },
       body: JSON.stringify({
-        model: process.env.OPENROUTER_MODEL || 'meta-llama/llama-3.1-8b-instruct',
+        model: (process.env.OPENROUTER_MODEL || 'meta-llama/llama-3.1-8b-instruct').trim(),
         max_tokens: isConversation ? 1500 : 1000,
         temperature: 0.3,
         messages,
@@ -118,6 +119,8 @@ ${JSON.stringify(data, null, 2)}`;
     });
 
     if (!response.ok) {
+      const errBody = await response.text();
+      console.error('[Ask] OpenRouter HTTP error:', response.status, errBody.slice(0, 300));
       return NextResponse.json({ error: 'AI request failed' }, { status: 500 });
     }
 
@@ -125,7 +128,8 @@ ${JSON.stringify(data, null, 2)}`;
     const answer = result.choices?.[0]?.message?.content ?? 'No response generated.';
 
     return NextResponse.json({ answer });
-  } catch {
+  } catch (err) {
+    console.error('[Ask] Unhandled error:', err instanceof Error ? err.message : err);
     return NextResponse.json({ error: 'AI request failed' }, { status: 500 });
   }
 }
