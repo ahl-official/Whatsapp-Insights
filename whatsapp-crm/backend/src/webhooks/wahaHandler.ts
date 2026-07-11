@@ -56,18 +56,22 @@ wahaRouter.post('/webhook', async (req: Request, res: Response) => {
           headers: { 'X-Api-Key': config.waha.apiKey },
         });
         if (lidRes.ok) {
-          const lidData = (await lidRes.json()) as { phoneNumber?: string };
-          if (lidData?.phoneNumber) {
-            // Use phone number as contact identifier
-            contactName = String(lidData.phoneNumber);
-            console.log(
-              `[Webhook] Resolved @lid contact: ${chatId} → ${contactName}`
-            );
+          const lidData = (await lidRes.json()) as { pn?: string };
+          if (lidData?.pn) {
+            // pn contains the full phone number e.g. "919372584918@c.us"
+            // Extract just the number part without @c.us
+            const phone = String(lidData.pn).replace('@c.us', '');
+            contactName = phone;
+            console.log(`[Webhook] Resolved @lid: ${chatId} → ${contactName}`);
           }
         }
       } catch {
         // Keep Unknown if resolution fails
       }
+    }
+
+    if ((!contactName || contactName === 'Unknown') && payload?.payload?._notifyName) {
+      contactName = payload.payload._notifyName;
     }
 
     // ── Filter 1: Drop groups and broadcasts ──────────────────────────
