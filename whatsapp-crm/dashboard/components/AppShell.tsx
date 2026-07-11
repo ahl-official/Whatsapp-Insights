@@ -20,6 +20,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           <Link href="/logs">📡 Live Feed</Link>
           <Link href="/">Overview</Link>
           <Link href="/agents">Agents</Link>
+          <Link href="/reports">📊 Reports</Link>
           <Link href="/customers">Customers</Link>
           <Link href="/search">Search</Link>
         </div>
