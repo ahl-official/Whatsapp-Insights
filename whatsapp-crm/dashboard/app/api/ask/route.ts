@@ -64,7 +64,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Question is required' }, { status: 400 });
     }
 
-    const apiKey = process.env.GROQ_API_KEY;
+    const apiKey = process.env.OPENROUTER_API_KEY;
     if (!apiKey) {
       return NextResponse.json({ error: 'AI not configured' }, { status: 500 });
     }
@@ -101,14 +101,16 @@ ${JSON.stringify(data, null, 2)}`;
 
     messages.push({ role: 'user', content: userMessage });
 
-    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${apiKey}`,
+        'HTTP-Referer': 'https://dashboard-rose-iota-52.vercel.app',
+        'X-Title': 'WhatsApp CRM Dashboard',
       },
       body: JSON.stringify({
-        model: 'llama-3.1-8b-instant',
+        model: process.env.OPENROUTER_MODEL || 'meta-llama/llama-3.1-8b-instruct',
         max_tokens: isConversation ? 1500 : 1000,
         temperature: 0.3,
         messages,

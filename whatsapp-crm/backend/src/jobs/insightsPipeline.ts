@@ -2,7 +2,7 @@ import { config } from '../config';
 import { fetchUnprocessedChats, markChatProcessed, updateChatTranscript } from '../database/chats';
 import { getInsightByChatId, upsertInsight } from '../database/insights';
 import { getProfile, upsertProfile } from '../database/profiles';
-import { callGroq } from '../ai/groq';
+import { callOpenRouter } from '../ai/openrouter';
 import { callGemini, AIResponse } from '../ai/gemini';
 import { prompts } from '../ai/prompts';
 import { fetchFullTranscript } from '../waha/client';
@@ -19,10 +19,10 @@ function truncateTranscript(transcript: string): string {
 
 async function callAI(prompt: string, maxTokens: number): Promise<AIResponse> {
   try {
-    return await callGroq(prompt, maxTokens);
-  } catch (groqErr) {
-    const groqMsg = groqErr instanceof Error ? groqErr.message : String(groqErr);
-    console.warn(`[Insights] Groq failed, trying Gemini: ${groqMsg}`);
+    return await callOpenRouter(prompt, maxTokens);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.warn(`[Insights] OpenRouter failed, trying Gemini: ${msg}`);
     return await callGemini(prompt, maxTokens);
   }
 }

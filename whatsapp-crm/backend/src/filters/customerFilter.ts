@@ -1,11 +1,11 @@
-import { callGroq } from '../ai/groq';
+import { callOpenRouter } from '../ai/openrouter';
 import { callGemini } from '../ai/gemini';
 import { prompts } from '../ai/prompts';
 
 interface ClassificationResult {
   isCustomer: boolean;
   reason: string;
-  classifier: 'groq' | 'gemini' | 'default';
+  classifier: 'openrouter' | 'gemini' | 'default';
 }
 
 export async function classifyChat(
@@ -15,16 +15,16 @@ export async function classifyChat(
   const transcript = messages.join('\n');
   const prompt = prompts.classifier(transcript, contactName);
 
-  // Try Groq first
+  // Try OpenRouter first (primary)
   try {
-    const result = await callGroq(prompt, 300);
+    const result = await callOpenRouter(prompt, 300);
     return {
       isCustomer: result.isCustomer ?? true,
-      reason:     result.reason ?? 'Classified by Groq',
-      classifier: 'groq',
+      reason:     result.reason ?? 'Classified by OpenRouter',
+      classifier: 'openrouter',
     };
   } catch (err) {
-    console.warn('[Classifier] Groq failed, trying Gemini:', err);
+    console.warn('[Classifier] OpenRouter failed, trying Gemini:', err);
   }
 
   // Gemini fallback

@@ -9,7 +9,7 @@ export async function callGroq(
     method: 'POST',
     headers: {
       'Content-Type':  'application/json',
-      'Authorization': `Bearer ${config.ai.groqApiKey}`,
+      'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
     },
     body: JSON.stringify({
       model:       'llama-3.1-8b-instant',

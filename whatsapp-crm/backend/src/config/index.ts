@@ -26,7 +26,9 @@ export const config = {
 
   // AI
   ai: {
-    groqApiKey:           process.env.GROQ_API_KEY!,
+    openRouterApiKey:     process.env.OPENROUTER_API_KEY || '',
+    openRouterModel:      process.env.OPENROUTER_MODEL || 'meta-llama/llama-3.1-8b-instruct',
+    openRouterBaseUrl:    process.env.OPENROUTER_BASE_URL || 'https://openrouter.ai/api/v1',
     geminiApiKey:         process.env.GEMINI_API_KEY!,
     geminiModel:          process.env.GEMINI_MODEL || 'gemini-2.5-flash',
     classifierMsgCount:   parseInt(process.env.CLASSIFIER_MESSAGE_COUNT || '8'),
@@ -79,7 +81,7 @@ export const config = {
 // Validate required vars on startup — crash early with a clear message
 const required = [
   'WAHA_BASE_URL', 'WAHA_API_KEY', 'WAHA_SESSION',
-  'GROQ_API_KEY', 'GEMINI_API_KEY',
+  'OPENROUTER_API_KEY', 'GEMINI_API_KEY',
   'SUPABASE_URL', 'SUPABASE_ANON_KEY', 'SUPABASE_SERVICE_KEY',
 ];
 
