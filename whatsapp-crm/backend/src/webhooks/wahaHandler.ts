@@ -24,7 +24,7 @@ wahaRouter.post('/webhook', async (req: Request, res: Response) => {
     const payload = req.body;
     const event       = payload?.event ?? 'unknown';
     chatId            = payload?.payload?.from || payload?.payload?.chatId;
-    const contactName = payload?.payload?.pushName || 'Unknown';
+    let contactName   = payload?.payload?.pushName || 'Unknown';
     const lastMessage = payload?.payload?.body || '';
 
     console.log(
@@ -43,6 +43,31 @@ wahaRouter.post('/webhook', async (req: Request, res: Response) => {
     if (!chatId) {
       console.log('[Webhook] Skipped — missing chatId');
       return;
+    }
+
+    // Try to resolve contact name for @lid format IDs
+    if ((!contactName || contactName === 'Unknown') && chatId.endsWith('@lid')) {
+      try {
+        const lidUrl = new URL(
+          `/api/${sessionName}/lids/${encodeURIComponent(chatId)}`,
+          config.waha.baseUrl
+        );
+        const lidRes = await fetch(lidUrl.toString(), {
+          headers: { 'X-Api-Key': config.waha.apiKey },
+        });
+        if (lidRes.ok) {
+          const lidData = (await lidRes.json()) as { phoneNumber?: string };
+          if (lidData?.phoneNumber) {
+            // Use phone number as contact identifier
+            contactName = String(lidData.phoneNumber);
+            console.log(
+              `[Webhook] Resolved @lid contact: ${chatId} → ${contactName}`
+            );
+          }
+        }
+      } catch {
+        // Keep Unknown if resolution fails
+      }
     }
 
     // ── Filter 1: Drop groups and broadcasts ──────────────────────────
