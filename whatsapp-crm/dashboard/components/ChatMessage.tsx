@@ -14,6 +14,17 @@ function formatTime(date: Date): string {
   return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
+/** Render **bold** markers as <strong> */
+function renderInlineMarkdown(text: string) {
+  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+  return parts.map((part, i) => {
+    if (part.startsWith('**') && part.endsWith('**') && part.length > 4) {
+      return <strong key={i}>{part.slice(2, -2)}</strong>;
+    }
+    return <span key={i}>{part}</span>;
+  });
+}
+
 export default function ChatMessage({
   role,
   content,
@@ -35,6 +46,8 @@ export default function ChatMessage({
     );
   }
 
+  const lines = content.split('\n');
+
   return (
     <div className="ask-message ask-message-ai">
       <span className="ask-avatar" aria-hidden>
@@ -42,14 +55,18 @@ export default function ChatMessage({
       </span>
       <div className="ask-message-body">
         <div className="ask-bubble ask-bubble-ai">
-          {content.split('\n').map((line, i) => (
+          {lines.map((line, i) => (
             <span key={i}>
-              {line}
-              {i < content.split('\n').length - 1 && <br />}
+              {renderInlineMarkdown(line)}
+              {i < lines.length - 1 && <br />}
             </span>
           ))}
         </div>
-        {chartData && chartData.type !== 'line' && <CRMChart chart={chartData} />}
+        {chartData && chartData.type !== 'line' && (
+          <div className="ask-chart-wrap">
+            <CRMChart chart={chartData} />
+          </div>
+        )}
         <div className="ask-meta ask-meta-ai">
           AHL CRM AI · {formatTime(timestamp)}
         </div>

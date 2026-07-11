@@ -146,6 +146,13 @@
   margin-top: 0.25rem;
 }
 
+.ask-chart-wrap {
+  width: 100%;
+  min-width: 280px;
+  min-height: 240px;
+  margin-top: 0.5rem;
+}
+
 .crm-chart-title {
   font-size: 0.8rem;
   font-weight: 600;
